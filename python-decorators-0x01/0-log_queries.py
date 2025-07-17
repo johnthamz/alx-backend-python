@@ -1,28 +1,24 @@
+#!/usr/bin/env python3
+from datetime import datetime
+import sqlite3
 import functools
 
-def log_queries():
-    """Decorator that logs the SQL query used inside a function"""
+def log_queries(func):
+    """Decorator to log SQL queries"""
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        query = args[0] if args else "NO QUERY PROVIDED"
+        print(f"[{datetime.now()}] Executing SQL Query: {query}")
+        return func(*args, **kwargs)
+    return wrapper
 
-    def decorator(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            # Assume the SQL is the first argument
-            sql_query = args[0] if args else "NO QUERY PROVIDED"   
-
-            print(f"Executing SQL query: {sql_query}")
-            return func (*args, **kwargs)
-
-        return wrapper
-    
-    return decorator
-
-   
-   #  EXAMPLE FUNCTION FOR TESTING
-@log_queries()
+@log_queries
 def execute_query(query):
-    # Simulate running the query (we're not using a real DB yet)
-    print("Running query on the database...")
+    conn = sqlite3.connect("test.db")
+    cursor = conn.cursor()
+    cursor.execute(query)
+    conn.commit()
+    conn.close()
 
-#  RUN TEST
 if __name__ == "__main__":
-    execute_query("SELECT * FROM users;")
+    execute_query("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name TEXT);")
